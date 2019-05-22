@@ -6,6 +6,7 @@ setwd("~/GitHub/DS-Capstone/Coursera-SwiftKey/final/en_US")
     library(tidyverse)
     library(tidytext)
     library(ggthemes)
+    library(wordcloud)
 
 #Fix encoding of the files
     code = "windows-1252"
@@ -81,4 +82,29 @@ setwd("~/GitHub/DS-Capstone/Coursera-SwiftKey/final/en_US")
                     xlab(NULL) +
                     coord_flip() +
                     facet_wrap(vars(source))
+
+    ##N-GRAMS ANALYSIS
+        #2-GRAMS by adding the arguments token = "ngrams" and n = 2 we can tokenize the data in 2-grams
+            #Blog
+            blog_tk <- unnest_tokens(blogs,bigram,text,token = "ngrams", n = 2) %>% mutate(source = "blogs") %>%
+                separate(bigram, c("word1", "word2"), sep = " ") %>%#Separate the words from the bigram in word1 and word2 columns
+                filter(!word1 %in% stop_words$word) %>%#filter  the cases where either word is a stopword
+                filter(!word2 %in% stop_words$word)
+            #news
+            news_tk <- unnest_tokens(news,bigram,text,token = "ngrams", n = 2) %>% mutate(source = "news") %>%
+                separate(bigram, c("word1", "word2"), sep = " ")%>%#Separate the words from the bigram in word1 and word2 columns
+                filter(!word1 %in% stop_words$word) %>%#filter  the cases where either word is a stopword
+                filter(!word2 %in% stop_words$word)
+            #Twitter
+            twitter_tk <- unnest_tokens(twitter,bigram,text,token = "ngrams", n = 2) %>% mutate(source = "twitter") %>%
+                separate(bigram, c("word1", "word2"), sep = " ") %>%#Separate the words from the bigram in word1 and word2 columns
+                filter(!word1 %in% stop_words$word) %>%#filter  the cases where either word is a stopword
+                filter(!word2 %in% stop_words$word)
+            #Bigrams
+            dataset_bigram <- bind_rows(blog_tk,news_tk,twitter_tk) %>%
+                                filter(!is.na(word1))%>% #filter the cases where either word is NA
+                                filter(!is.na(word2))
+            #Bigram count
+            count_bigram <- dataset_bigram %>% 
+                            count(word1,word2, sort = TRUE)
                 
