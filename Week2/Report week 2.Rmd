@@ -1,14 +1,29 @@
+---
+title: "EDA Analysis Week 2"
+author: "Hernan Solano"
+date: "10/10/2019"
+output: html_document
+---
 
+```{r setup, include=FALSE,echo=FALSE}
+require("knitr")
 #Set up workin directory to easily extract english dataset
-setwd("~/GitHub/DS-Capstone/Coursera-SwiftKey/final/en_US")
+opts_knit$set(root.dir = "~/GitHub/DS-Capstone/Coursera-SwiftKey/final/en_US")
+knitr::opts_chunk$set(echo = FALSE)
 
 #Loading libraries to be used on this file
     library(tidyverse)
     library(tidytext)
     library(ggthemes)
     library(wordcloud)
+```
 
-    #Read random lines of the file and save it into another file
+## Introduction
+
+In this document I will perform an Exploratory Data Analysis on the Capstone project Training Dataset provided on the Data Science Specialization. I will use tools provided by the specialization courses and also the Tidy text minig e-book that you can find here: https://www.tidytextmining.com.
+
+```{r import_data, cache=TRUE,warning=FALSE}
+#Read random lines of the file and save it into another file
         #Blog
             blogs <- read_delim("en_US.blogs.txt",delim = "\n") #read the whole blogs file
             text <- names(blogs) #Saving the name of the column because it corresponds with the first value
@@ -33,7 +48,39 @@ setwd("~/GitHub/DS-Capstone/Coursera-SwiftKey/final/en_US")
             
         #Remove unnecessary objects
             rm("blogs_rows","news_rows","twitter_rows","text")
-    #Now it is the time to tokenize the datasets and join them together
+```
+
+## Getting to know the Dataset
+
+Firsts things first, the dataset is divided in three files indicating the origin of the data. We have a collection of blog entries on the blogs.txt file, a collection of news extracts in the news.txt file and finally a colection of tweets on the twitter.txt file. 
+
+What I did to get familiar with the data is to use the summary function to know the type of data that we have and the size of the data. 
+
+Note: We are only using a randomly choosed half of the data for each file.
+
+On the following table you can see the size and data type of half of the blogs file. The number inticates how many entries we have includes on the table.
+```{r summary_blogs}
+#Summary of blogs
+summary(blogs)
+```
+On the following table you can see the size and data type of half of the news file.
+```{r summary_news}
+#Summary of news
+summary(news)
+```
+On the following table you can see the size and data type of half of the twitter file.
+```{r summary_twitter}
+#summary of twitter
+summary(twitter)
+```
+
+#Tokenization
+
+The next step in a simple Natural Lenguage Processing analysis is to tokenize the datasets
+
+
+```{r tokenize, cache=TRUE, warning=FALSE}
+#Now it is the time to tokenize the datasets and join them together
         #Blog
             blog_tk <- unnest_tokens(blogs,word,value) %>% mutate(source = "blogs")
         #news
@@ -45,9 +92,12 @@ setwd("~/GitHub/DS-Capstone/Coursera-SwiftKey/final/en_US")
                         mutate(word = str_extract(word, "[a-z']+")) %>% #eliminate not alphabetic characters
                         filter(!is.na(word),word !="rt") %>% #filter to keep non NA words and eliminate rt as a word
                         anti_join(stop_words) #Eliminate stopwords
-                        
-    
-    ##EXPLORATORY DATA ANALYSIS
+```
+
+## Exploratory Data Analysis
+
+```{r word_freq}
+##EXPLORATORY DATA ANALYSIS
         #Overall Word frequencies
             word_freq <- count(dataset,word, sort = TRUE)
             #Visualisation of frequencies
@@ -59,6 +109,10 @@ setwd("~/GitHub/DS-Capstone/Coursera-SwiftKey/final/en_US")
                     geom_col(fill = "#336666") +
                     xlab(NULL) +
                     coord_flip()
+```
+
+
+````{r word_freq_by_source}
         #Word frequencies by source
             source_freq <-  count(dataset,word,source, sort = TRUE)
             #visualization of word frequencies by source
@@ -72,28 +126,5 @@ setwd("~/GitHub/DS-Capstone/Coursera-SwiftKey/final/en_US")
                     coord_flip() +
                     facet_wrap(vars(source))
 
-    ##N-GRAMS ANALYSIS
-        #2-GRAMS by adding the arguments token = "ngrams" and n = 2 we can tokenize the data in 2-grams
-            #Blog
-            blog_tk <- unnest_tokens(blogs,bigram,text,token = "ngrams", n = 2) %>% mutate(source = "blogs") %>%
-                separate(bigram, c("word1", "word2"), sep = " ") %>%#Separate the words from the bigram in word1 and word2 columns
-                filter(!word1 %in% stop_words$word) %>%#filter  the cases where either word is a stopword
-                filter(!word2 %in% stop_words$word)
-            #news
-            news_tk <- unnest_tokens(news,bigram,text,token = "ngrams", n = 2) %>% mutate(source = "news") %>%
-                separate(bigram, c("word1", "word2"), sep = " ")%>%#Separate the words from the bigram in word1 and word2 columns
-                filter(!word1 %in% stop_words$word) %>%#filter  the cases where either word is a stopword
-                filter(!word2 %in% stop_words$word)
-            #Twitter
-            twitter_tk <- unnest_tokens(twitter,bigram,text,token = "ngrams", n = 2) %>% mutate(source = "twitter") %>%
-                separate(bigram, c("word1", "word2"), sep = " ") %>%#Separate the words from the bigram in word1 and word2 columns
-                filter(!word1 %in% stop_words$word) %>%#filter  the cases where either word is a stopword
-                filter(!word2 %in% stop_words$word)
-            #Bigrams
-            dataset_bigram <- bind_rows(blog_tk,news_tk,twitter_tk) %>%
-                                filter(!is.na(word1))%>% #filter the cases where either word is NA
-                                filter(!is.na(word2))
-            #Bigram count
-            count_bigram <- dataset_bigram %>% 
-                            count(word1,word2, sort = TRUE)
-                
+
+```
